@@ -3,6 +3,7 @@
         "cstdio": "c",
         "memory.h": "c",
         "corecrt.h": "c",
-        "corecrt_wstdio.h": "c"
+        "corecrt_wstdio.h": "c",
+        "string.h": "c"
     }
 }

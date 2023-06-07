@@ -18,7 +18,7 @@ int main(int argc, char** argv){
     myPtr();
 
     int(*ptr)(int, int) = &mySum;
-    int result = mySum(4, 5);
+    int result = ptr(4, 5);
     printf("%i", result);
 
     return 0;

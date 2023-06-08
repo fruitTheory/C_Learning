@@ -4,6 +4,7 @@
         "memory.h": "c",
         "corecrt.h": "c",
         "corecrt_wstdio.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "xmemory": "c"
     }
 }

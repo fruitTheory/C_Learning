@@ -5,11 +5,15 @@
 #define OPTION_CREATE_BOOK 0
 #define OPTION_READ_BOOK 1
 #define OPTION_LIST_BOOK 2
+#define BOOK_FLAG_SOLD 0b00000001
 
+
+typedef unsigned char BOOK_FLAGS;
 struct book
 {
     char title[20];
     char description[200];
+    BOOK_FLAGS flags;
 };
 
 // global var file
@@ -31,6 +35,15 @@ int handle_create()
     fgets(b.description, sizeof(b.description), stdin); // user input book desc
     printf("Book description: %s\n", b.description);
 
+    printf("Has the book sold: Y/N?\n");
+    char c = 0;
+    scanf("%c", &c);
+
+    if(c == 'Y' || c == 'y')
+    {
+        b.flags |= BOOK_FLAG_SOLD;
+    }
+
     // variable of type FILE
     file = fopen("./data.bin", "rb+");
     fseek(file, 0, SEEK_END);
@@ -48,8 +61,11 @@ int book_count()
 
 void view_book(struct book *book)
 {
-    printf("Description: %s\n", book->description);
     printf("Title: %s\n", book->title);
+    printf("Description: %s\n", book->description);
+    if(book->flags & BOOK_FLAG_SOLD){
+        printf("This book was sold, sorry.\n");
+    }
     
 }
 
@@ -72,9 +88,9 @@ int handle_list()
     while (fread(&b, sizeof(b), 1, file) == 1)
     {
         // copy each book info into our newly created book ptr memory
-        memccpy(&bookptr[index], &b, 0, sizeof(b));
+        memcpy(&bookptr[index], &b, sizeof(b));
         printf("%i - %s\n", index, b.title);
-        printf("%i - %s\n", index, b.description);
+        //printf("%i - %s\n", index, b.description);
         index++;
     }
 
@@ -83,7 +99,8 @@ int handle_list()
     // scanf requires address of variables because need to modidy their values
     scanf("%i", &option);
     getchar();
-    //printf("\n");
+    printf("\n");
+
     if (option < 0 || option >= total_books)
     {
         printf("Invalid book! Please choose a book:\n\n");
@@ -92,6 +109,9 @@ int handle_list()
     }
     
     view_book(&bookptr[option]);
+    // malloc'd new memory above, so now freeing the memory
+    free(bookptr);
+    return 0;
 }
 
 int choose_option()
@@ -101,6 +121,7 @@ int choose_option()
     int option = 0;
     scanf("%i", &option);
     getchar();
+    printf("\n");
 
     int res = 0;
     switch (option)
@@ -157,6 +178,6 @@ int main(int argc, char **argv)
     {
         return -1;
     }
-
+    fclose(file);
     return 0;
 }

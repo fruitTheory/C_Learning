@@ -2,7 +2,10 @@
 #include "assert.h"
 
 
+// These are our memory related functions
+
 static void chip8_is_memory_in_bounds(int index){
+    
     // If memory out of bounds throw assertion 
     assert(index >= 0 && index < CHIP8_MEMORY_SIZE);
 }

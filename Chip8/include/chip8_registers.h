@@ -3,6 +3,8 @@
 
 #include "config.h"
 
+
+// Implementing our regiesters 
 struct chip8_registers{
 
     // Temp storage regions outside of ram - faster for quick usage

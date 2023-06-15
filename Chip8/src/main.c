@@ -3,7 +3,11 @@
 #include "chip8.h"
 
 
-int main(int argc, char** argv){
+void testing(){
+
+    /*
+    * Section for old tests and comments
+    */
 
     // declare variable of type struct chip8
     struct chip8 chip8;
@@ -16,7 +20,22 @@ int main(int argc, char** argv){
     chip8_memory_set(&chip8.memory, 0x69, 'B');
     // Get from memory location 105 which is equal to hex 0x69
     printf("%c\n", chip8_memory_get(&chip8.memory, 105));
+}
 
+
+int main(int argc, char** argv){
+
+    // declare variable of type struct chip8
+    struct chip8 chip8;
+
+    // setting stack point to 0 and pushing to the stack
+    chip8.registers.SP = 0;
+    chip8_stack_push(&chip8, 0xff);
+    chip8_stack_push(&chip8, 0xaa);
+
+    // pop off the stack, note that once its gone its set to 0 
+    printf("%x - %i\n", chip8_stack_pop(&chip8));
+    printf("%i - %x\n", chip8_stack_pop(&chip8));
 
     // init SDL and others vars
     SDL_Init(SDL_INIT_EVERYTHING);

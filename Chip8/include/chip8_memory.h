@@ -4,6 +4,7 @@
 #include "config.h"
 
 
+// this is the memory we have and the size of it
 struct chip8_memory
 {
     unsigned char memory[CHIP8_MEMORY_SIZE];

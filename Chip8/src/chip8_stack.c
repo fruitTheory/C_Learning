@@ -2,6 +2,7 @@
 #include "chip8_stack.h"
 #include <assert.h>
 
+// Functions for the stack
 static void chip8_stack_inbounds(struct chip8* chip8){
 
     assert(chip8->registers.SP < CHIP8_TOTAL_STACK_DEPTH);

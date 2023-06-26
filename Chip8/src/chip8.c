@@ -2,11 +2,6 @@
 #include <memory.h>
 
 
-//init is basically setting total memory available/needed
-void chip8_init(struct chip8* chip8){
-    memset(chip8, 0, sizeof(struct chip8));
-}
-
 const char chip8_default_character_set[] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
     0x20, 0x60, 0x20, 0x20, 0x70, // 1
@@ -25,3 +20,9 @@ const char chip8_default_character_set[] = {
     0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
     0xF0, 0x80, 0xF0, 0x80, 0x80  // F
 };
+
+//initializing memory for various chip8 components and itself
+void chip8_init(struct chip8* chip8){
+    memset(chip8, 0, sizeof(struct chip8));
+    memcpy(chip8->memory.memory, chip8_default_character_set, sizeof(chip8_default_character_set));
+}

@@ -4,6 +4,7 @@
 #include "chip8_keyboard.h"
 
 
+// map characters to keyboard array
 const char keyboard_map[CHIP8_TOTAL_KEYS] = {
     SDLK_0, SDLK_1, SDLK_2, SDLK_3, SDLK_4, SDLK_5, 
     SDLK_6, SDLK_7, SDLK_8, SDLK_9, SDLK_a, SDLK_b,
@@ -14,9 +15,13 @@ void testing();
 
 int main(int argc, char* argv[]){
 
-    // declare variable of type struct chip8
+    // initialize the computer variable
     struct chip8 chip8;
 
+    // initialize the needed memory of computer
+    chip8_init(&chip8);
+
+    // call test function
     testing();
 
     // init SDL and others vars
@@ -31,7 +36,10 @@ int main(int argc, char* argv[]){
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_TEXTUREACCESS_TARGET);
     SDL_Event event;
-    while(1){
+
+    // program is running
+    bool program_is_running = true;
+    while(program_is_running){
         while ((SDL_PollEvent(&event)))
         {
                 switch(event.type){
@@ -46,26 +54,33 @@ int main(int argc, char* argv[]){
 
                     // map keys to virtual keys 
                     int vkey = chip8_keyboard_map(keyboard_map, key);
-                    printf("key down: %x\n", vkey);
+                    //printf("key down: %x\n", vkey);
 
                     // should return a key if -1 is not returned
                     if(vkey != -1){
                         chip8_keyboard_down(&chip8.keyboard, vkey);
+                        printf("key down: %x\n", vkey);
                     }
                     }
                 break;
 
                 case SDL_KEYUP:{
-                    // event get key
+                    // event virtual key
                     char key = event.key.keysym.sym;
+                    //printf("virtual key: %i\n", key);
+
+                    // event physical key
+                    int pkey = event.key.keysym.scancode;
+                    //printf("physical key: %i\n", pkey);
 
                     // map keys to virtual keys 
                     int vkey = chip8_keyboard_map(keyboard_map, key);
-                    printf("key up\n");
+                    //printf("key up: %i\n", vkey);
 
                     // should return a key if -1 is not returned
                     if(vkey != -1){
                         chip8_keyboard_up(&chip8.keyboard, vkey);
+                        printf("key up: %i\n", vkey);
                     }
                     }
                 }

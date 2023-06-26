@@ -8,6 +8,7 @@ static void chip8_keyboard_in_bounds(int key){
 }
 
 
+
 int chip8_keyboard_map(const char* map, char key){
     for (int i = 0; i < CHIP8_TOTAL_KEYS; i++){
         if (map[i] == key){

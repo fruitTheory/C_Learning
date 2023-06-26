@@ -2,6 +2,7 @@
 #include "SDL2/SDL.h"
 #include "chip8.h"
 #include "chip8_keyboard.h"
+#include "chip8_screen.h"
 
 
 // map characters to keyboard array
@@ -15,11 +16,20 @@ void testing();
 
 int main(int argc, char* argv[]){
 
+    
+    /*--------------------
+        Initialize
+    --------------------*/
+
+
     // initialize the computer variable
     struct chip8 chip8;
 
     // initialize the needed memory of computer
     chip8_init(&chip8);
+
+    // set pixel x and y on screen
+    chip8_screen_set(&chip8.screen, 0, 0);
 
     // call test function
     testing();
@@ -37,7 +47,10 @@ int main(int argc, char* argv[]){
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_TEXTUREACCESS_TARGET);
     SDL_Event event;
 
-    // program is running
+    /*----------------------------
+        Run program loop
+    ----------------------------*/
+
     bool program_is_running = true;
     while(program_is_running){
         while ((SDL_PollEvent(&event)))
@@ -61,7 +74,7 @@ int main(int argc, char* argv[]){
                         chip8_keyboard_down(&chip8.keyboard, vkey);
                         printf("key down: %x\n", vkey);
                     }
-                    }
+                }
                 break;
 
                 case SDL_KEYUP:{
@@ -82,24 +95,46 @@ int main(int argc, char* argv[]){
                         chip8_keyboard_up(&chip8.keyboard, vkey);
                         printf("key up: %i\n", vkey);
                     }
-                    }
                 }
+            }
         }
-        
-        SDL_SetRenderDrawColor(renderer, 0, 25, 25, 255);
+
+
+    /*----------------------------
+        Setup pixel and color
+    ----------------------------*/
+
+        SDL_SetRenderDrawColor(renderer, 0, 25, 25, 255); // color for background
         SDL_RenderClear(renderer); // clears entire rendering target
+        SDL_SetRenderDrawColor(renderer, 0, 0, 128, 255); // color for rect/pixel
 
-        SDL_SetRenderDrawColor(renderer, 0, 0, 128, 255); // color for rect
+        for(int x = 0; x < CHIP8_WIDTH; x++){
+            for(int y = 0; y < CHIP8_HEIGHT; y++){
+                if (chip8_screen_is_set(&chip8.screen, x, y)){
+                    // create rectangle as a pixel
+                    SDL_Rect r;
+                    r.x = x * CHIP8_WINDOW_MULT; // compensate for difference in x
+                    r.y = y * CHIP8_WINDOW_MULT; // compensate for difference in y
+                    r.w = CHIP8_WINDOW_MULT; // multiply width by 10
+                    r.h = CHIP8_WINDOW_MULT; // multiply height by 10
+                    
+                    // r.x = 0; r.y = 0; r.w = 40; r.h = 40; // original rect
 
-        // create rectangle 
-        SDL_Rect r;
-        r.x = 0; r.y = 0; r.w = 40; r.h = 40;
+                    // fill rect with current target draw color
+                    SDL_RenderFillRect(renderer, &r);
 
-        // fill rect with current target draw color
-        SDL_RenderFillRect(renderer, &r);
+                }
+            }
+        }
+
         SDL_RenderPresent(renderer); // present the renderer
     }
 
+
+
+    /*----------------------------
+        Clean memory
+    ----------------------------*/
 out:
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
@@ -111,11 +146,9 @@ out:
 
 void testing(){
 
-    /*
-    *********************************************
-    * Section for old tests and comments
-    *********************************************
-    */
+    /*--------------------------------------------------------
+        Section for testing and storing old code
+    --------------------------------------------------------*/
 
     // declare variable of type struct chip8
     struct chip8 chip8;

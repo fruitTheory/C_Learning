@@ -93,8 +93,8 @@ int main(int argc, char* argv[]){
     chip8.registers.V[0] = 200;
     chip8.registers.V[1] = 50;
     chip8_exec(&chip8, 0x8014);
-    printf("%x\n", chip8.registers.V[0]);
-    printf("%x\n", chip8.registers.V[0x0f]);
+    printf("%i\n", chip8.registers.V[0]);
+    printf("%i\n", chip8.registers.V[0x0f]);
 
     /*----------------------------
         Run program loop

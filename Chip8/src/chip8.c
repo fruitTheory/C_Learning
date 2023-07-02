@@ -73,6 +73,35 @@ static void chip8_exec_extened_eight(struct chip8* chip8, unsigned opcode){
 
             chip8->registers.V[x] = temp;
         break;
+
+        // 8xy5 - SUB Vx, Vy - Set Vx = Vx - Vy, set VF = NOT borrow.
+        case 0x05:
+            if(chip8->registers.V[x] > chip8->registers.V[y]){
+                 chip8->registers.V[0x0f] = true;
+            }
+
+            chip8->registers.V[x] = chip8->registers.V[x] - chip8->registers.V[y];
+        break;
+
+        // 8xy6 - SHR Vx {, Vy} - Set Vx = Vx SHR 1.
+        case 0x06:
+            // set 0x0f flag to true if least significant bit is true
+            chip8->registers.V[0x0f] = chip8->registers.V[x] & 0x01;
+            chip8->registers.V[x] /= 2;
+        break;
+
+        // 8xy7 - SUBN Vx, Vy
+        case 0x07:
+            chip8->registers.V[0x0f] = chip8->registers.V[y] > chip8->registers.V[x];
+            chip8->registers.V[x] = chip8->registers.V[y] - chip8->registers.V[x];
+        break;
+
+        // 8xyE - SHL Vx {, Vy} - Set Vx = Vx SHL 1.
+        case 0x0E:
+            chip8->registers.V[0x0f] = chip8->registers.V[x] & 0b10000000;
+            chip8->registers.V[x] = chip8->registers.V[x] * 2;
+        break;
+        
     }
 }
 

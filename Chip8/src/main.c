@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <windows.h>
 #include "SDL2/SDL.h"
 #include "chip8.h"
 #include "chip8_keyboard.h"
@@ -16,25 +17,52 @@ void testing();
 
 int main(int argc, char* argv[]){
 
+
+    /*-----------------------
+        Load Chip8 File
+    -----------------------*/
+
+    if(argc < 2){
+        printf("You must provide a file to load\n");
+        return -1;
+    }
+
+    const char* filename = argv[1];
+    printf("Filename loaded is: %s\n", filename);
+
+    FILE* f = fopen(filename, "rb");
+    if (!f){
+        printf("Failed to open file");
+        return -1;
+    }
     
+    // seek end of file
+    fseek(f, 0, SEEK_END);
+    // ftell gives current position, since we're at end of file can rep the size
+    long size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    char buf[size];
+    // read as one chunk
+    int res = fread(buf, size, 1, f);
+
+    if(res != 1){
+        printf("Failed to read from file\n");
+        return -1;
+    }
+
     /*--------------------
         Initialize
     --------------------*/
-
 
     // initialize the computer variable
     struct chip8 chip8;
 
     // initialize the needed memory of computer
     chip8_init(&chip8);
-
-    // set pixel x and y on screen
-    //chip8_screen_set(&chip8.screen, 0, 0);
-
-    chip8_screen_draw_sprite(&chip8.screen, 5, 5, &chip8.memory.memory[0xA], 5);
-
-    // call test function
-    testing();
+    
+    // load binary
+    chip8_load(&chip8, buf, size);
 
     // init SDL and others vars
     SDL_Init(SDL_INIT_EVERYTHING);
@@ -48,6 +76,25 @@ int main(int argc, char* argv[]){
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_TEXTUREACCESS_TARGET);
     SDL_Event event;
+
+    /*--------------------
+        Run Functions
+    --------------------*/
+    
+    // draw sprite from character set 0 - 5 - 10 
+    chip8_screen_draw_sprite(&chip8.screen, 5, 5, &chip8.memory.memory[0xF], CHIP8_DEFAULT_SPRITE_SIZE);
+    
+    // exec some shizz
+    chip8.registers.V[0] = 0x20;
+    chip8.registers.V[1] = 0x30;
+    chip8_exec(&chip8, 0x8010);
+    printf("%x\n", chip8.registers.V[0]);
+
+    chip8.registers.V[0] = 200;
+    chip8.registers.V[1] = 50;
+    chip8_exec(&chip8, 0x8014);
+    printf("%x\n", chip8.registers.V[0]);
+    printf("%x\n", chip8.registers.V[0x0f]);
 
     /*----------------------------
         Run program loop
@@ -130,7 +177,35 @@ int main(int argc, char* argv[]){
         }
 
         SDL_RenderPresent(renderer); // present the renderer
+
+
+    /*----------------------------
+        Delays and Instructions
+    ----------------------------*/
+
+        // small delay if delay timer is above zero
+        if (chip8.registers.delay_timer > 0){
+            Sleep(100);
+            chip8.registers.delay_timer -= 1;
+            printf("Delay\n");
+        }
+
+        // small delay if delay timer is above zero
+        if (chip8.registers.sound_timer > 0){
+            Beep(12000, 100 * chip8.registers.sound_timer);
+            chip8.registers.sound_timer = 0;
+        }
+        
+        unsigned short opcode = chip8_memory_get_short(&chip8.memory, chip8.registers.PC);
+        if(chip8.registers.PC < CHIP8_MEMORY_SIZE){
+            chip8.registers.PC += 2;
+        }
+        chip8_exec(&chip8, opcode);
+        // move program counter 2 bytes since opcodes are 2 bytes
+
+        
     }
+
 
 
 
@@ -154,6 +229,27 @@ void testing(){
 
     // declare variable of type struct chip8
     struct chip8 chip8;
+
+
+    // Below few lines are instruction 3xkk test
+    chip8.registers.PC = 0x00;
+    chip8.registers.V[0x00] = 0x22;
+    // 3xkk skip if Vx = kk
+    chip8_exec(&chip8, 0x3021);
+    // will program count skip [return 2]
+    printf("%x\n", chip8.registers.PC);
+
+    // execute some opcode [return from subroutine]
+    //chip8_exec(&chip8, 0x00E0);
+
+    // set pixel x and y on screen
+    //chip8_screen_set(&chip8.screen, 0, 0);
+
+    // set delay timer amount
+    //chip8.registers.delay_timer = 20;
+
+    // set sound timer amount
+    //chip8.registers.sound_timer = 50;
 
     // Store value in hex slot 15[Fh] of array and print that out
     chip8.registers.V[0xF] = 25;

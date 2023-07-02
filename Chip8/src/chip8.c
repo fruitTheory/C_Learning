@@ -2,6 +2,9 @@
 #include <memory.h>
 #include <assert.h>
 #include <stdbool.h>
+#include <time.h>
+#include <stdlib.h>
+#include "SDL2\SDL_events.h"
 
 const char chip8_default_character_set[] = {
     0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
@@ -105,12 +108,65 @@ static void chip8_exec_extened_eight(struct chip8* chip8, unsigned opcode){
     }
 }
 
+static char chip8_wait_for_keypress(struct chip8* chip8){
+    
+    SDL_Event event;
+    while(SDL_WaitEvent(&event)){
+        if(event.type != SDL_KEYDOWN)
+            continue;
+
+        char c = event.key.keysym.sym;
+        char chip8_key = chip8_keyboard_map(&chip8->keyboard, c);
+        if(chip8_key != -1){
+            return chip8_key;
+        }
+
+    }
+    return -1;
+}
+
+static void chip8_exec_extened_F(struct chip8* chip8, unsigned opcode){
+
+    unsigned char x = (opcode >> 8) & 0x000f;
+
+    switch(opcode & 0x00ff){
+        
+        // Fx07 - LD Vx, DT - Set Vx = delay timer value.
+        case 0x07:
+            chip8->registers.V[x] = chip8->registers.delay_timer;
+        break;
+
+        case 0x0A:{
+            char pressed_key = chip8_wait_for_keypress(chip8);
+            chip8->registers.V[x] = pressed_key;
+        break;
+        }
+
+        // Fx15 - LD DT, Vx - Set delay timer = Vx.
+        case 0x15:
+            chip8->registers.delay_timer = chip8->registers.V[x];
+        break;
+
+        // Fx18 - LD ST, Vx - Set sound timer = Vx.
+        case 0x18:
+            chip8->registers.sound_timer = chip8->registers.V[x];
+        break;
+
+        // Fx1E - ADD I, Vx - Set I = I + Vx.
+        case 0x1e:
+            chip8->registers.I += chip8->registers.V[x];
+        break;
+    }
+}
+
 static void chip8_exec_extended(struct chip8* chip8, unsigned opcode){
 
     unsigned short nnn = opcode & 0x0fff;
     unsigned char x = (opcode >> 8) & 0x000f;
     unsigned char y = (opcode >> 4) & 0x000f;
     unsigned char kk = opcode & 0x00ff;
+    unsigned char n = opcode & 0x000f;
+    const char* sprite = (const char*) &chip8->memory.memory[chip8->registers.I];
 
     switch(opcode & 0xf000){
         // JP address, jump to nnns
@@ -161,6 +217,56 @@ static void chip8_exec_extended(struct chip8* chip8, unsigned opcode){
             chip8_exec_extened_eight(chip8, opcode);
         break;
 
+        // 9xy0 - SNE Vx, Vy - Skip next instruction if Vx != Vy
+        case 0x9000:
+            if(chip8->registers.V[x] != chip8->registers.V[y]){
+                chip8->registers.PC += 2;
+            }
+        break;
+
+        // Annn - LD I, addr - Set I = nnn
+        case 0xA000:
+           chip8->registers.I = nnn;
+        break;
+
+        // Bnnn - JP V0, addr - Jump to location nnn + V0
+        case 0xB000:
+           chip8->registers.PC = nnn + chip8->registers.V[0x00];
+        break;
+
+        // Cxkk - RND Vx, byte - Set Vx = random byte AND kk
+        case 0xC000:
+           srand(clock());
+           chip8->registers.V[x]= (rand() % 255) & kk;
+        break;
+
+        // Dxyn - DRW Vx, Vy, nibble - Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
+        case 0xD000:
+            // note that pulling sprite declaration from above
+            chip8->registers.V[0x00] = chip8_screen_draw_sprite(&chip8->screen, chip8->registers.V[x], chip8->registers.V[y], sprite, n);
+        break;
+        
+        case 0xE000:{
+                switch(opcode & 0x00ff){
+                    // Ex9E - SKP Vx - Skip next instruction if key with the value of Vx is pressed
+                    case 0x9e:
+                        if(chip8_keyboard_is_down(&chip8->keyboard, chip8->registers.V[x])){
+                            chip8->registers.PC += 2;
+                        }
+                    break;
+
+                    // ExA1 - SKNP Vx - Skip next instruction if key with the value of Vx is not pressed.
+                    case 0xa1:
+                        if(!chip8_keyboard_is_down(&chip8->keyboard, chip8->registers.V[x])){
+                            chip8->registers.PC += 2;
+                        }
+                    break;
+                }
+            }
+        
+        case 0xf000:
+            chip8_exec_extened_F(chip8, opcode);
+        break;
     }
 }
 

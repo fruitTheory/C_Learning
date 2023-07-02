@@ -62,7 +62,7 @@ int main(int argc, char* argv[]){
     chip8_init(&chip8);
     
     // load binary
-    chip8_load(&chip8, buf, size);
+    chip8_load(&chip8, buf, size);\
 
     // init SDL and others vars
     SDL_Init(SDL_INIT_EVERYTHING);
@@ -81,20 +81,7 @@ int main(int argc, char* argv[]){
         Run Functions
     --------------------*/
     
-    // draw sprite from character set 0 - 5 - 10 
-    chip8_screen_draw_sprite(&chip8.screen, 5, 5, &chip8.memory.memory[0xF], CHIP8_DEFAULT_SPRITE_SIZE);
-    
-    // exec some shizz
-    chip8.registers.V[0] = 0x20;
-    chip8.registers.V[1] = 0x30;
-    chip8_exec(&chip8, 0x8010);
-    printf("%x\n", chip8.registers.V[0]);
 
-    chip8.registers.V[0] = 200;
-    chip8.registers.V[1] = 50;
-    chip8_exec(&chip8, 0x8014);
-    printf("%i\n", chip8.registers.V[0]);
-    printf("%i\n", chip8.registers.V[0x0f]);
 
     /*----------------------------
         Run program loop
@@ -115,7 +102,7 @@ int main(int argc, char* argv[]){
                     char key = event.key.keysym.sym;
 
                     // map keys to virtual keys 
-                    int vkey = chip8_keyboard_map(keyboard_map, key);
+                    int vkey = chip8_keyboard_map(&chip8.keyboard, key);
                     //printf("key down: %x\n", vkey);
 
                     // should return a key if -1 is not returned
@@ -136,7 +123,7 @@ int main(int argc, char* argv[]){
                     //printf("physical key: %i\n", pkey);
 
                     // map keys to virtual keys 
-                    int vkey = chip8_keyboard_map(keyboard_map, key);
+                    int vkey = chip8_keyboard_map(&chip8.keyboard, key);
                     //printf("key up: %i\n", vkey);
 
                     // should return a key if -1 is not returned
@@ -231,6 +218,33 @@ void testing(){
     struct chip8 chip8;
 
 
+    // draw sprite from character set 0 - 5 - 10 
+    chip8_screen_draw_sprite(&chip8.screen, 5, 5, &chip8.memory.memory[0xF], CHIP8_DEFAULT_SPRITE_SIZE);
+    
+    // check keyboard implementation
+    chip8_keyboard_set_map(&chip8.keyboard, keyboard_map);
+    chip8.registers.V[0] = 0x00;
+    chip8_exec(&chip8, 0xF00A);
+    printf("%x\n", chip8.registers.V[0]);
+
+    // exec some shizz
+    chip8.registers.V[0] = 0x20;
+    chip8.registers.V[1] = 0x30;
+    chip8_exec(&chip8, 0x8010);
+    printf("%x\n", chip8.registers.V[0]);
+
+    chip8.registers.V[0] = 200;
+    chip8.registers.V[1] = 50;
+    chip8_exec(&chip8, 0x8014);
+    printf("%i\n", chip8.registers.V[0]);
+    printf("%i\n", chip8.registers.V[0x0f]);
+
+    chip8.registers.I = 0x00;
+    chip8.registers.V[0] = 10;
+    chip8.registers.V[1] = 10;
+    chip8_exec(&chip8, 0xD015);
+
+
     // Below few lines are instruction 3xkk test
     chip8.registers.PC = 0x00;
     chip8.registers.V[0x00] = 0x22;
@@ -261,7 +275,7 @@ void testing(){
     printf("%c\n", chip8_memory_get(&chip8.memory, 105));
 
     // check definition
-    printf("%X\n", chip8_keyboard_map(keyboard_map, 10));
+    //printf("%X\n", chip8_keyboard_map(keyboard_map, 10));
 
     chip8_keyboard_down(&chip8.keyboard, 0xf);// key is up = true
     //chip8_keyboard_up(&chip8.keyboard, 0xf); // key is up = false

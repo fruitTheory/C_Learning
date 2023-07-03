@@ -39,7 +39,7 @@ void chip8_load(struct chip8* chip8, const char* buf, size_t size){
 }
 
 
-static void chip8_exec_extened_eight(struct chip8* chip8, unsigned opcode){
+static void chip8_exec_extened_eight(struct chip8* chip8, unsigned short opcode){
     unsigned char x = (opcode >> 8) & 0x000f;
     unsigned char y = (opcode >> 4) & 0x000f;
     unsigned char final_four_bits = opcode & 0x000f;
@@ -79,6 +79,7 @@ static void chip8_exec_extened_eight(struct chip8* chip8, unsigned opcode){
 
         // 8xy5 - SUB Vx, Vy - Set Vx = Vx - Vy, set VF = NOT borrow.
         case 0x05:
+            chip8->registers.V[0x0f] = false;
             if(chip8->registers.V[x] > chip8->registers.V[y]){
                  chip8->registers.V[0x0f] = true;
             }
@@ -90,7 +91,7 @@ static void chip8_exec_extened_eight(struct chip8* chip8, unsigned opcode){
         case 0x06:
             // set 0x0f flag to true if least significant bit is true
             chip8->registers.V[0x0f] = chip8->registers.V[x] & 0x01;
-            chip8->registers.V[x] /= 2;
+            chip8->registers.V[x] = chip8->registers.V[x] /= 2;
         break;
 
         // 8xy7 - SUBN Vx, Vy
@@ -125,13 +126,13 @@ static char chip8_wait_for_keypress(struct chip8* chip8){
     return -1;
 }
 
-static void chip8_exec_extened_F(struct chip8* chip8, unsigned opcode){
+static void chip8_exec_extened_F(struct chip8* chip8, unsigned short opcode){
 
     unsigned char x = (opcode >> 8) & 0x000f;
 
     switch(opcode & 0x00ff){
         
-        // Fx07 - LD Vx, DT - Set Vx = delay timer value.
+        // Fx07 - LD Vx, DT - Set Vx = delay timer value
         case 0x07:
             chip8->registers.V[x] = chip8->registers.delay_timer;
         break;
@@ -142,31 +143,63 @@ static void chip8_exec_extened_F(struct chip8* chip8, unsigned opcode){
         break;
         }
 
-        // Fx15 - LD DT, Vx - Set delay timer = Vx.
+        // Fx15 - LD DT, Vx - Set delay timer = Vx
         case 0x15:
             chip8->registers.delay_timer = chip8->registers.V[x];
         break;
 
-        // Fx18 - LD ST, Vx - Set sound timer = Vx.
+        // Fx18 - LD ST, Vx - Set sound timer = Vx
         case 0x18:
             chip8->registers.sound_timer = chip8->registers.V[x];
         break;
 
-        // Fx1E - ADD I, Vx - Set I = I + Vx.
+        // Fx1E - ADD I, Vx - Set I = I + Vx
         case 0x1e:
             chip8->registers.I += chip8->registers.V[x];
         break;
+
+        // Fx29 - LD F, Vx - Set I = location of sprite for digit Vx.
+        case 0x29:
+            chip8->registers.I = chip8->registers.V[x] * CHIP8_DEFAULT_SPRITE_HEIGHT;
+        break;
+
+        // Fx33 - LD B, Vx - Store BCD representation of Vx in memory locations I, I+1, and I+2
+        case 0x33:{
+            unsigned char hundreds = chip8->registers.V[x]/100;
+            unsigned char tens = chip8->registers.V[x]/ 10 % 10;
+            unsigned char units = chip8->registers.V[x] % 10;
+
+            chip8_memory_set(&chip8->memory, chip8->registers.I, hundreds);
+            chip8_memory_set(&chip8->memory, chip8->registers.I+1, tens);
+            chip8_memory_set(&chip8->memory, chip8->registers.I+2, units);
+        }
+        break;
+
+        // Fx55 - LD [I], Vx - Store registers V0 through Vx in memory starting at location I
+        case 0x55:{
+            for(int i = 0; i <= x; i++){
+                chip8_memory_set(&chip8->memory, chip8->registers.I+i, chip8->registers.V[i]);
+            }
+        break;
+        }
+
+        // Fx65 - LD Vx, [I] - Read registers V0 through Vx from memory starting at location I.
+        case 0x65:{
+            for(int i = 0; i <= x; i++){
+                chip8->registers.V[i] = chip8_memory_get(&chip8->memory, chip8->registers.I+i);
+            }
+        break;
+        }
     }
 }
 
-static void chip8_exec_extended(struct chip8* chip8, unsigned opcode){
+static void chip8_exec_extended(struct chip8* chip8, unsigned short opcode){
 
     unsigned short nnn = opcode & 0x0fff;
     unsigned char x = (opcode >> 8) & 0x000f;
     unsigned char y = (opcode >> 4) & 0x000f;
     unsigned char kk = opcode & 0x00ff;
     unsigned char n = opcode & 0x000f;
-    const char* sprite = (const char*) &chip8->memory.memory[chip8->registers.I];
 
     switch(opcode & 0xf000){
         // JP address, jump to nnns
@@ -204,7 +237,7 @@ static void chip8_exec_extended(struct chip8* chip8, unsigned opcode){
 
         // 6xkk - LD Vx, byte, Vx = kk
         case 0x6000:
-            chip8->registers.V[x] == kk;
+            chip8->registers.V[x] = kk;
         break;
 
         // 7xkk - ADD Vx, byte - Set Vx = Vx + kk
@@ -241,9 +274,10 @@ static void chip8_exec_extended(struct chip8* chip8, unsigned opcode){
         break;
 
         // Dxyn - DRW Vx, Vy, nibble - Display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
-        case 0xD000:
-            // note that pulling sprite declaration from above
-            chip8->registers.V[0x00] = chip8_screen_draw_sprite(&chip8->screen, chip8->registers.V[x], chip8->registers.V[y], sprite, n);
+        case 0xD000:{
+            const char* sprite = (const char*) &chip8->memory.memory[chip8->registers.I];
+            chip8->registers.V[0x0f] = chip8_screen_draw_sprite(&chip8->screen, chip8->registers.V[x], chip8->registers.V[y], sprite, n);
+        }
         break;
         
         case 0xE000:{
@@ -255,7 +289,7 @@ static void chip8_exec_extended(struct chip8* chip8, unsigned opcode){
                         }
                     break;
 
-                    // ExA1 - SKNP Vx - Skip next instruction if key with the value of Vx is not pressed.
+                    // ExA1 - SKNP Vx - Skip next instruction if key with the value of Vx is not pressed
                     case 0xa1:
                         if(!chip8_keyboard_is_down(&chip8->keyboard, chip8->registers.V[x])){
                             chip8->registers.PC += 2;

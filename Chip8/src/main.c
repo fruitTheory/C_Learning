@@ -13,7 +13,7 @@ const char keyboard_map[CHIP8_TOTAL_KEYS] = {
     SDLK_c, SDLK_d, SDLK_e, SDLK_f
 };
 
-void testing();
+//void testing();
 
 int main(int argc, char* argv[]){
 
@@ -62,7 +62,9 @@ int main(int argc, char* argv[]){
     chip8_init(&chip8);
     
     // load binary
-    chip8_load(&chip8, buf, size);\
+    chip8_load(&chip8, buf, size);
+
+    chip8_keyboard_set_map(&chip8.keyboard, keyboard_map);
 
     // init SDL and others vars
     SDL_Init(SDL_INIT_EVERYTHING);
@@ -172,29 +174,22 @@ int main(int argc, char* argv[]){
 
         // small delay if delay timer is above zero
         if (chip8.registers.delay_timer > 0){
-            Sleep(100);
+            Sleep(10);
             chip8.registers.delay_timer -= 1;
-            printf("Delay\n");
+            // printf("Delay\n");
         }
 
         // small delay if delay timer is above zero
         if (chip8.registers.sound_timer > 0){
-            Beep(12000, 100 * chip8.registers.sound_timer);
+            Beep(12000, 10 * chip8.registers.sound_timer);
             chip8.registers.sound_timer = 0;
         }
         
         unsigned short opcode = chip8_memory_get_short(&chip8.memory, chip8.registers.PC);
-        if(chip8.registers.PC < CHIP8_MEMORY_SIZE){
-            chip8.registers.PC += 2;
-        }
+        chip8.registers.PC += 2;
         chip8_exec(&chip8, opcode);
-        // move program counter 2 bytes since opcodes are 2 bytes
-
         
     }
-
-
-
 
     /*----------------------------
         Clean memory
@@ -208,88 +203,88 @@ out:
 }
 
 
-void testing(){
+// void testing(){
 
-    /*--------------------------------------------------------
-        Section for testing and storing old code
-    --------------------------------------------------------*/
+//     /*--------------------------------------------------------
+//         Section for testing and storing old code
+//     --------------------------------------------------------*/
 
-    // declare variable of type struct chip8
-    struct chip8 chip8;
+//     // declare variable of type struct chip8
+//     struct chip8 chip8;
 
 
-    // draw sprite from character set 0 - 5 - 10 
-    chip8_screen_draw_sprite(&chip8.screen, 5, 5, &chip8.memory.memory[0xF], CHIP8_DEFAULT_SPRITE_SIZE);
+//     // draw sprite from character set 0 - 5 - 10 
+//     chip8_screen_draw_sprite(&chip8.screen, 5, 5, &chip8.memory.memory[0xF], CHIP8_DEFAULT_SPRITE_SIZE);
     
-    // check keyboard implementation
-    chip8_keyboard_set_map(&chip8.keyboard, keyboard_map);
-    chip8.registers.V[0] = 0x00;
-    chip8_exec(&chip8, 0xF00A);
-    printf("%x\n", chip8.registers.V[0]);
+//     // check keyboard implementation
+//     chip8_keyboard_set_map(&chip8.keyboard, keyboard_map);
+//     chip8.registers.V[0] = 0x00;
+//     chip8_exec(&chip8, 0xF00A);
+//     printf("%x\n", chip8.registers.V[0]);
 
-    // exec some shizz
-    chip8.registers.V[0] = 0x20;
-    chip8.registers.V[1] = 0x30;
-    chip8_exec(&chip8, 0x8010);
-    printf("%x\n", chip8.registers.V[0]);
+//     // exec some shizz
+//     chip8.registers.V[0] = 0x20;
+//     chip8.registers.V[1] = 0x30;
+//     chip8_exec(&chip8, 0x8010);
+//     printf("%x\n", chip8.registers.V[0]);
 
-    chip8.registers.V[0] = 200;
-    chip8.registers.V[1] = 50;
-    chip8_exec(&chip8, 0x8014);
-    printf("%i\n", chip8.registers.V[0]);
-    printf("%i\n", chip8.registers.V[0x0f]);
+//     chip8.registers.V[0] = 200;
+//     chip8.registers.V[1] = 50;
+//     chip8_exec(&chip8, 0x8014);
+//     printf("%i\n", chip8.registers.V[0]);
+//     printf("%i\n", chip8.registers.V[0x0f]);
 
-    chip8.registers.I = 0x00;
-    chip8.registers.V[0] = 10;
-    chip8.registers.V[1] = 10;
-    chip8_exec(&chip8, 0xD015);
+//     chip8.registers.I = 0x00;
+//     chip8.registers.V[0] = 10;
+//     chip8.registers.V[1] = 10;
+//     chip8_exec(&chip8, 0xD015);
 
 
-    // Below few lines are instruction 3xkk test
-    chip8.registers.PC = 0x00;
-    chip8.registers.V[0x00] = 0x22;
-    // 3xkk skip if Vx = kk
-    chip8_exec(&chip8, 0x3021);
-    // will program count skip [return 2]
-    printf("%x\n", chip8.registers.PC);
+//     // Below few lines are instruction 3xkk test
+//     chip8.registers.PC = 0x00;
+//     chip8.registers.V[0x00] = 0x22;
+//     // 3xkk skip if Vx = kk
+//     chip8_exec(&chip8, 0x3021);
+//     // will program count skip [return 2]
+//     printf("%x\n", chip8.registers.PC);
 
-    // execute some opcode [return from subroutine]
-    //chip8_exec(&chip8, 0x00E0);
+//     // execute some opcode [return from subroutine]
+//     //chip8_exec(&chip8, 0x00E0);
 
-    // set pixel x and y on screen
-    //chip8_screen_set(&chip8.screen, 0, 0);
+//     // set pixel x and y on screen
+//     //chip8_screen_set(&chip8.screen, 0, 0);
 
-    // set delay timer amount
-    //chip8.registers.delay_timer = 20;
+//     // set delay timer amount
+//     //chip8.registers.delay_timer = 20;
 
-    // set sound timer amount
-    //chip8.registers.sound_timer = 50;
+//     // set sound timer amount
+//     //chip8.registers.sound_timer = 50;
 
-    // Store value in hex slot 15[Fh] of array and print that out
-    chip8.registers.V[0xF] = 25;
-    printf("%i\n", chip8.registers.V[0xF]);
+//     // Store value in hex slot 15[Fh] of array and print that out
+//     chip8.registers.V[0xF] = 25;
+//     printf("%i\n", chip8.registers.V[0xF]);
 
-    // Example of setting memory and getting from memory
-    chip8_memory_set(&chip8.memory, 0x69, 'B');
-    // Get from memory location 105 which is equal to hex 0x69
-    printf("%c\n", chip8_memory_get(&chip8.memory, 105));
+//     // Example of setting memory and getting from memory
+//     chip8_memory_set(&chip8.memory, 0x69, 'B');
+//     // Get from memory location 105 which is equal to hex 0x69
+//     printf("%c\n", chip8_memory_get(&chip8.memory, 105));
 
-    // check definition
-    //printf("%X\n", chip8_keyboard_map(keyboard_map, 10));
+//     // check definition
+//     //printf("%X\n", chip8_keyboard_map(keyboard_map, 10));
 
-    chip8_keyboard_down(&chip8.keyboard, 0xf);// key is up = true
-    //chip8_keyboard_up(&chip8.keyboard, 0xf); // key is up = false
+//     chip8_keyboard_down(&chip8.keyboard, 0xf);// key is up = true
+//     //chip8_keyboard_up(&chip8.keyboard, 0xf); // key is up = false
 
-    bool is_down = chip8_keyboard_is_down(&chip8.keyboard, 0xf);
-    printf("%i\n", is_down); // cast to int
+//     bool is_down = chip8_keyboard_is_down(&chip8.keyboard, 0xf);
+//     printf("%i\n", is_down); // cast to int
 
-    // setting stack point to 0 and pushing to the stack
-    chip8.registers.SP = 0;
-    chip8_stack_push(&chip8, 0xff);
-    chip8_stack_push(&chip8, 0xaa);
+//     // setting stack point to 0 and pushing to the stack
+//     chip8.registers.SP = 0;
+//     chip8_stack_push(&chip8, 0xff);
+//     chip8_stack_push(&chip8, 0xaa);
 
-    // pop off the stack, note that once its gone its set to 0 
-    printf("%x - %i\n", chip8_stack_pop(&chip8));
-    printf("%i - %x\n", chip8_stack_pop(&chip8));
+//     // pop off the stack, note that once its gone its set to 0 
+//     printf("%x - %i\n", chip8_stack_pop(&chip8));
+//     printf("%i - %x\n", chip8_stack_pop(&chip8));
 
-}
+// }

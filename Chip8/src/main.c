@@ -174,14 +174,14 @@ int main(int argc, char* argv[]){
 
         // small delay if delay timer is above zero
         if (chip8.registers.delay_timer > 0){
-            Sleep(10);
+            Sleep(15);
             chip8.registers.delay_timer -= 1;
             // printf("Delay\n");
         }
 
         // small delay if delay timer is above zero
         if (chip8.registers.sound_timer > 0){
-            Beep(12000, 10 * chip8.registers.sound_timer);
+            Beep(12000, 15 * chip8.registers.sound_timer);
             chip8.registers.sound_timer = 0;
         }
         
